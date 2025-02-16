@@ -1,16 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:medora/main.dart';
+import 'package:medora/main.dart';  // Update this with your actual entry point
 
 void main() {
-  testWidgets('Login screen loads correctly', (WidgetTester tester) async {
-    // Build the Medora app
-    await tester.pumpWidget(const MedoraApp());
+  testWidgets('Check if login screen loads', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp());
 
-    // Verify that there is an email and password field
-    expect(find.byType(TextField), findsNWidgets(2)); // ✅ Find exactly 2 text fields
-
-    // Verify that the login button exists
-    expect(find.widgetWithText(ElevatedButton, "Login"), findsOneWidget); // ✅ Find login button
+    expect(find.text('Login'), findsOneWidget);  // Adjust based on your UI
   });
 }

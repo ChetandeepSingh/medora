@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,8 +23,11 @@ class MedoraApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: "/login",
       routes: {
-        "/login": (context) => const LoginScreen(),
-        "/register": (context) => const RegisterScreen(),
+        "/login": (context) => LoginScreen(),
+        "/register": (context) => RegisterScreen(),
+        "/home": (context) => HomeScreen(),
+        "/profile": (context) => ProfileScreen(),
+        "/reset-password": (context) => ResetPasswordScreen(),
       },
     );
   }

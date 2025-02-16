@@ -1,31 +1,54 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/auth_provider.dart';
+import 'package:medora/screens/home_screen.dart'; // Import your Home Screen
 
-class LoginScreen extends ConsumerStatefulWidget { // ✅ Use ConsumerStatefulWidget instead of ConsumerWidget
-  const LoginScreen({super.key});
-
+class LoginScreen extends StatefulWidget {
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class _LoginScreenState extends State<LoginScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool isLoading = false;
 
   Future<void> _login() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final user = await ref.read(authServiceProvider).signIn(email, password);
-
-    if (!mounted) return; // ✅ Ensure widget is still mounted before using context
-
-    if (user != null) {
-      Navigator.pushReplacementNamed(context, "/home"); // ✅ Navigate safely
-    } else {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Failed")),
+        const SnackBar(content: Text("Email and Password cannot be empty.")),
       );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (userCredential.user != null) {
+        Navigator.pushReplacementNamed(context, "/home");
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Login failed. Please try again.";
+      if (e.code == 'user-not-found') {
+        message = "No user found with this email.";
+      } else if (e.code == 'wrong-password') {
+        message = "Incorrect password.";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -36,20 +59,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: emailController,
+              controller: _emailController,
               decoration: const InputDecoration(labelText: "Email"),
+              keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(height: 16),
             TextField(
-              controller: passwordController,
+              controller: _passwordController,
               decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _login, // ✅ Call the function correctly
+            const SizedBox(height: 20),
+            isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+              onPressed: _login,
               child: const Text("Login"),
             ),
             TextButton(
@@ -57,6 +83,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Navigator.pushNamed(context, "/register");
               },
               child: const Text("Don't have an account? Register"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, "/reset-password");
+              },
+              child: const Text("Forgot Password?"),
             ),
           ],
         ),

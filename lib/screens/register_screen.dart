@@ -1,31 +1,64 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/auth_provider.dart';
 
-class RegisterScreen extends ConsumerStatefulWidget {
+class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+class _RegisterScreenState extends State<RegisterScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool isLoading = false;
 
   Future<void> _register() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final user = await ref.read(authServiceProvider).signUp(email, password);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-    if (!mounted) return; // ✅ Ensure widget is still mounted before using context
-
-    if (user != null) {
-      Navigator.pop(context); // ✅ Navigate safely
-    } else {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registration Failed")),
+        const SnackBar(content: Text("Email and Password cannot be empty.")),
       );
+      return;
+    }
+
+    if (!RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Enter a valid email address.")),
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password must be at least 6 characters.")),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      Navigator.pushReplacementNamed(context, "/home");
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Registration Failed: ${e.message}")),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -36,25 +69,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: emailController,
+              controller: _emailController,
               decoration: const InputDecoration(labelText: "Email"),
+              keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(height: 16),
             TextField(
-              controller: passwordController,
+              controller: _passwordController,
               decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _register, // ✅ Call the function correctly
+            const SizedBox(height: 20),
+            isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+              onPressed: _register,
               child: const Text("Register"),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pushNamed(context, "/login");
               },
               child: const Text("Already have an account? Login"),
             ),
