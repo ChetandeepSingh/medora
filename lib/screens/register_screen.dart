@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../providers/auth_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,48 +16,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool isLoading = false;
 
   Future<void> _register() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email and Password cannot be empty.")),
-      );
-      return;
-    }
-
-    if (!RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter a valid email address.")),
-      );
-      return;
-    }
-
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Password must be at least 6 characters.")),
-      );
-      return;
-    }
-
-    setState(() {
-      isLoading = true;
-    });
-
+    setState(() => isLoading = true);
     try {
-      await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      Navigator.pushReplacementNamed(context, "/home");
-    } on FirebaseAuthException catch (e) {
+      await FirebaseFirestore.instance.collection("users").doc(userCredential.user!.uid).set({
+        "email": _emailController.text.trim(),
+        "createdAt": DateTime.now(),
+      });
+      Navigator.pushReplacementNamed(context, "/pharmacies");
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Registration Failed: ${e.message}")),
+        SnackBar(content: Text("Registration Failed: ${e.toString()}")),
       );
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -69,31 +43,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: "Email"),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: "Password"),
-              obscureText: true,
-            ),
+            TextField(controller: _emailController, decoration: const InputDecoration(labelText: "Email")),
+            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
             const SizedBox(height: 20),
-            isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-              onPressed: _register,
-              child: const Text("Register"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, "/login");
-              },
-              child: const Text("Already have an account? Login"),
-            ),
+            isLoading ? const CircularProgressIndicator() : ElevatedButton(onPressed: _register, child: const Text("Register")),
           ],
         ),
       ),

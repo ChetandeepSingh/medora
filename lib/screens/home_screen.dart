@@ -21,23 +21,55 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-          ),
-        ],
+        title: const Text("Medora Home"),
+        backgroundColor: Colors.deepPurple,
+        centerTitle: true,
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Welcome, ${user?.email ?? "Guest"}"),
+            Text(
+              "Welcome, ${user?.email ?? "Guest"}",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _logout(context),
-              child: const Text("Logout"),
+            _buildHomeButton(context, Icons.local_pharmacy, "Manage Pharmacies", "/pharmacies"),
+            _buildHomeButton(context, Icons.person, "My Profile", "/profile"),
+            const Spacer(),
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () => _logout(context),
+                icon: const Icon(Icons.logout),
+                label: const Text("Logout"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeButton(BuildContext context, IconData icon, String label, String route) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.deepPurple.shade400,
+          padding: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        onPressed: () => Navigator.pushNamed(context, route),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Icon(icon, size: 30, color: Colors.white),
+            const SizedBox(width: 20),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 18, color: Colors.white),
             ),
           ],
         ),

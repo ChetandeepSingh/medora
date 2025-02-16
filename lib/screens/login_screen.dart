@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:medora/screens/home_screen.dart'; // Import your Home Screen
+import 'package:medora/screens/pharmacy_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
